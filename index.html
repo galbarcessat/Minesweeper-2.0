@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minesweeper</title>
+    <link rel="stylesheet" href="css/sprint.css">
+</head>
+
+<body onload="onInit(4,2)">
+    <div class="titles-container">
+        <h1>💣 Minesweeper 💣</h1>
+        <h2>The best minesweeper game on the internet!</h2>
+    </div>
+
+    <h3 class="current-level">LEVEL : Easy</h3>
+    <div class="best-score">BEST SCORE : <span class="best-text">0</span></div>
+
+    <div class="cheats-container">Cheats :
+        <div class="hints-container">
+            <span>HINTS :</span>
+            <span onclick="handleHint(this)" class="hint hint-one">💡</span>
+            <span onclick="handleHint(this)" class="hint hint-two">💡</span>
+            <span onclick="handleHint(this)" class="hint hint-three">💡</span>
+        </div>
+        <div class="safe-click-container">
+            <button onclick="onSafeClick()" class="safe-button">SafeClick</button>
+        </div>
+    </div>
+    <div class="button-container">
+        <button class="level-btn bn22" onclick="onInit(4,2)">Easy</button>
+        <button class="level-btn bn22" onclick="onInit(8,14)">Medium</button>
+        <button class="level-btn bn22" onclick="onInit(12,32)">Hard</button>
+    </div>
+    <!-- <p>Seconds: <span class="seconds">0</span></p> -->
+    <div class="hearts-smiley-container">
+        <span onclick="onSmiley()" class="smiley">😃</span>
+        <span class="hearts">❤️❤️❤️</span>
+        <span class="seconds">0</span>
+
+    </div>
+
+    <div class="game-container">
+        <table class="board-game">
+
+        </table>
+    </div>
+
+    <footer>Gal Ben Natan</footer>
+
+
+
+    <script src="js/utils.js"></script>
+    <script src="js/sprint.js"></script>
+</body>
+
+</html>
