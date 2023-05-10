@@ -1,31 +1,30 @@
 'use strict'
 //to win you have to open all cells which are not bombs and mark all bombs with flag by right click
-//לעשות אולי שזה יסמן את כל הפצצות לבד אם ניצחתי
+//לעשות אולי שזה יסמן את כל הפצצות לבד אם ניצחתי - לולאה שעוברת על כל הלוח ובודקת את מספר התאים שפתוחים ושהם לא פצצות
 //make a game over modal - win or lose with a play again button take from pacman
-// hint bonus
-// לבדוק באג שלפעמים מביא לי פצצה על אותו מיקום
-//עיצוב?
 //להוסיף רעש של פיצוץ שלוחצים על פצצה
-//
-
 
 const MINE = '💣'
 const EMPTY = ''
 const FLAG = '🚩'
+const EXTERMINATOR = '🦝'
 
 
 var gBoard
 var gMines
+// var gClickCount = 0
 var gClickedBombs
+var gSaveClicks = 0
+var gMegaHintClicks = 0
+var megaHintCells = []
+var allMinesPositions = []
+// var history = []
+var gPlacedMines = 0
 let seconds = 0;
 let timerId;
-var gSaveClicks = 0
-
-// var bestTime = 0
-// localStorage.setItem("bestTime", bestTime)
-
-
-
+let bestScoreLevel1 = Infinity;
+let bestScoreLevel2 = Infinity;
+let bestScoreLevel3 = Infinity;
 
 var gGame = {
     isOn: false,
@@ -33,28 +32,34 @@ var gGame = {
     markedCount: 0,
     secsPassed: 0,
     hintMode: false,
+    manuallyCreate: false,
+    manuallyDone: false,
+    megaHint: false,
+    megaHintDone: false,
+    mineExterminator: false,
+    mineExterminatorDone: false
 }
 
 
 function onInit(SIZE, MINES) {
     console.log('NEW GAME')
-    gGame.isOn = true
-    gGame.shownCount = 0
-    gGame.markedCount = 0
-    gClickedBombs = 0
-    var elHearts = document.querySelector('.hearts')
-    elHearts.innerText = '❤️❤️❤️'
-    var elSmiley = document.querySelector('.smiley')
-    elSmiley.innerText = '😃'
+    gGameReset()
     gBoard = buildBoard(SIZE)
+    renderBoard(gBoard)
     gMines = MINES
+    gClickedBombs = 0
     gSaveClicks = 0
+    gMegaHintClicks = 0
+    megaHintCells = []
+    allMinesPositions = []
+    resetManuallyMode()
+    resetSmileyAndHearts()
+    resetHints()
     resetTimer()
     changeLevelTitleName()
-    renderBoard(gBoard)
-    
+    getCurrentLvlBestScoreVal()
+    updateDomWithScores()
 }
-
 
 function buildBoard(size) {
     var board = []
@@ -98,7 +103,7 @@ function renderBoard(board) {
 
 
 }
-function giveRandomEmptyPos(board, firstClickedCellPos) {
+function giveEmptyCells(board, firstClickedCellPos) {
     var emptyCells = []
     // console.log('firstClickedCellPos', firstClickedCellPos)
     for (var i = 0; i < board.length; i++) {
@@ -109,16 +114,17 @@ function giveRandomEmptyPos(board, firstClickedCellPos) {
             }
         }
     }
-    var randomNum = getRandomInt(0, emptyCells.length)
-    var randomCellPos = emptyCells.splice(randomNum, 1)
-    // console.log('randomCellPos', randomCellPos[0])
-    return randomCellPos[0]
+    return emptyCells
 }
 
 function setMines(board, mines, firstClickedCellPos) {
+    var emptyCells = giveEmptyCells(board, firstClickedCellPos)
     for (var i = 0; i < mines; i++) {
-        var posForMine = giveRandomEmptyPos(board, firstClickedCellPos)
+        var randomNum = getRandomInt(0, emptyCells.length)
+        var randomCellPos = emptyCells.splice(randomNum, 1)
+        var posForMine = randomCellPos[0]
         board[posForMine.i][posForMine.j].isMine = true
+        allMinesPositions.push(posForMine)
     }
 }
 
@@ -155,15 +161,25 @@ function getClassName(location) {
 
 function onCellClicked(elCell, i, j) {
     var clickedCell = gBoard[i][j]
-    if (gGame.isOn === true && !clickedCell.isShown && !clickedCell.isMarked) {
-        if (gBoard.every(row => row.every(cell => !cell.isShown))) {
+
+    // gClickCount++
+    // console.log(gClickCount)
+    if (gGame.isOn === true && !clickedCell.isShown && !clickedCell.isMarked && !gGame.hintMode && !gGame.manuallyCreate && !gGame.megaHint) {
+        if (gBoard.every(row => row.every(cell => !cell.isShown)) && !gGame.manuallyDone) {
             //we can detect the first click by using a clickCount as well.
-            //if clickCount === 1 then...
+            //if gClickCount === 1 then...
             startTimer()
             var firstClickedCellPos = { i: i, j: j }
             setMines(gBoard, gMines, firstClickedCellPos)
             updateModelWithNegsCount(gBoard)
             console.log('gBoard', gBoard)
+        }
+        else if (gGame.manuallyDone) {
+            updateModelWithNegsCount(gBoard)
+            startTimer()
+            gGame.manuallyDone = false
+            console.log('gBoard', gBoard)
+
         }
 
         if (clickedCell.isMine === true) {
@@ -171,6 +187,7 @@ function onCellClicked(elCell, i, j) {
             clickedCell.isShown = true
             elCell.classList.add('mine')
             gClickedBombs++
+            // history.push(elCell)
             var elHearts = document.querySelector('.hearts')
             if (gClickedBombs === 1) {
                 elHearts.innerText = '❤️❤️🤍'
@@ -205,16 +222,53 @@ function onCellClicked(elCell, i, j) {
 
         }
     }
-    // if (gGame.hintMode) {
-    //     elCell.classList.add('hinted')
-    //     openCellsWithHint(gBoard, i, j)
-    //     setTimeout(() => {
-    //         elCell.innerText = EMPTY
-    //         elCell.classList.remove('hinted')
-    //     }, 2000)
-    // }
+    else if (gGame.hintMode && gGame.isOn) {
+        elCell.classList.add('hinted')
+        if (clickedCell.isMine === true) {
+            elCell.innerText = MINE
+        } else if (clickedCell.minesAroundCount !== 0 && !clickedCell.isMine) {
+            elCell.innerText = clickedCell.minesAroundCount
+        } else {
+            elCell.innerText = EMPTY
+        }
+        openCellsWithHint(gBoard, i, j)
+        setTimeout(() => {
+            elCell.innerText = EMPTY
+            elCell.classList.remove('hinted')
+        }, 1000)
+    }
+    else if (gGame.manuallyCreate) {
+        gBoard[i][j].isMine = true
+        gPlacedMines++
+        elCell.innerText = MINE
+
+    }
+    else if (gGame.megaHint && !gGame.megaHintDone && gGame.isOn) {
+        if (gMegaHintClicks <= 2) {
+            gMegaHintClicks++
+            elCell.classList.add('hinted')
+            if (clickedCell.isMine === true) {
+                elCell.innerText = MINE
+            } else if (clickedCell.minesAroundCount !== 0 && !clickedCell.isMine) {
+                elCell.innerText = clickedCell.minesAroundCount
+            } else {
+                elCell.innerText = EMPTY
+            }
+            var cellPos = { i: i, j: j }
+            megaHintCells.push(cellPos)
+            console.log('gMegaHintClicks', gMegaHintClicks)
+            console.log('cellPos', cellPos)
+
+        }
+        if (gMegaHintClicks === 2) {
+            openMegaHintCells(gBoard, megaHintCells)
+        }
+    }
+
     console.log('minesShownCount', gGame.shownCount)
 }
+
+
 
 function expandShown(board, rowIdx, colIdx) {
     for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
@@ -284,6 +338,7 @@ function onCellMarked(elCell, i, j) {
 
 
 function openBombs() {
+    // var allOpenedBombs = []
     for (var i = 0; i < gBoard.length; i++) {
         for (var j = 0; j < gBoard.length; j++) {
             var bombPos = { i: i, j: j }
@@ -296,23 +351,30 @@ function openBombs() {
                 elBomb.innerText = MINE
                 gBoard[i][j].isShown = true
                 elBomb.classList.add('mine')
+                // allOpenedBombs.push(elBomb)
             }
         }
     }
+    // history.push(allOpenedBombs)
 
 }
 
 
 function onSmiley() {
+    if (gGame.mineExterminatorDone) {
+        gMines = gMines + 3
+    }
     onInit(gBoard.length, gMines)
 }
-
 function checkVictory() {
-    if (gGame.shownCount + gGame.markedCount === gBoard.length ** 2 && gGame.markedCount === gMines) {
+    if (gGame.shownCount + gGame.markedCount === gBoard.length ** 2 && gGame.markedCount === gMines ||
+        gGame.shownCount + gGame.markedCount === gBoard.length ** 2 && gGame.markedCount === gPlacedMines) {
         var elSmiley = document.querySelector('.smiley')
         elSmiley.innerText = '😎'
         gGame.isOn = false
         stopTimer()
+        updateBestScore(gMines, gBoard, seconds)
+        updateDomWithScores()
 
     }
 }
@@ -323,6 +385,26 @@ function checkLose() {
     gGame.isOn = false
     stopTimer()
 
+}
+
+function gGameReset() {
+    gGame.isOn = true
+    gGame.shownCount = 0
+    gGame.markedCount = 0
+    gGame.hintMode = false
+    gGame.manuallyCreate = false
+    gGame.manuallyDone = false
+    gGame.megaHintDone = false
+    gGame.megaHint = false
+    gGame.mineExterminator = false
+    gGame.mineExterminatorDone = false
+}
+
+function resetSmileyAndHearts() {
+    var elHearts = document.querySelector('.hearts')
+    elHearts.innerText = '❤️❤️❤️'
+    var elSmiley = document.querySelector('.smiley')
+    elSmiley.innerText = '😃'
 }
 
 function changeLevelTitleName() {
@@ -350,16 +432,6 @@ function startTimer() {
 
 function stopTimer() {
     clearInterval(timerId);
-    // let bestTime = localStorage.getItem("bestTime")
-    // bestTime = parseInt(bestTime)
-    // if (seconds < bestTime || bestTime === 0) {
-    //     bestTime = seconds;
-    //     localStorage.setItem("bestTime", bestTime);
-    //     var bestScoreText = document.querySelector('.best-text')
-    //     bestScoreText.innerText = bestTime
-    // }
-    // console.log('bestTime', bestTime)
-    //להשתמש פה לתפוס את הזמן ללוקאל סטוראג
 }
 
 function resetTimer() {
@@ -369,22 +441,79 @@ function resetTimer() {
     secondsElement.innerText = seconds;
 }
 
+// LOCAL STORAGE - BEST TIME
 
+function getCurrentLvlBestScoreVal() {
 
+    // Check if the best scores exist in local storage
+    if (localStorage.getItem('bestScoreLevel1')) {
+        // Retrieve the best score for level 1 from local storage
+        bestScoreLevel1 = parseFloat(localStorage.getItem('bestScoreLevel1'));
+    }
 
+    if (localStorage.getItem('bestScoreLevel2')) {
+        // Retrieve the best score for level 2 from local storage
+        bestScoreLevel2 = parseFloat(localStorage.getItem('bestScoreLevel2'));
+    }
+
+    if (localStorage.getItem('bestScoreLevel3')) {
+        // Retrieve the best score for level 3 from local storage
+        bestScoreLevel3 = parseFloat(localStorage.getItem('bestScoreLevel3'));
+    }
+}
+
+function updateBestScore(gMines, gBoard, time) {
+    let bestScore;
+
+    // Determine which level the score is for
+    if (gBoard.length === 4 && gMines === 2) {
+        bestScore = bestScoreLevel1;
+    } else if (gBoard.length === 8 && gMines === 14) {
+        bestScore = bestScoreLevel2;
+    } else if (gBoard.length === 12 && gMines === 32) {
+        bestScore = bestScoreLevel3;
+    } else {
+        return; // Exit the function if the level is invalid
+    }
+
+    if (time < bestScore) {
+        // Update the best score for the corresponding level
+        if (gBoard.length === 4 && gMines === 2) {
+            bestScoreLevel1 = time;
+            var elBestEasyText = document.querySelector('.easy-text')
+            elBestEasyText.innerText = parseFloat(localStorage.getItem('bestScoreLevel1'))
+            localStorage.setItem('bestScoreLevel1', bestScoreLevel1);
+        } else if (gBoard.length === 8 && gMines === 14) {
+            bestScoreLevel2 = time;
+            var elBestMediumText = document.querySelector('.medium-text')
+            elBestMediumText.innerText = parseFloat(localStorage.getItem('bestScoreLevel2'))
+            localStorage.setItem('bestScoreLevel2', bestScoreLevel2);
+        } else if (gBoard.length === 12 && gMines === 32) {
+            bestScoreLevel3 = time;
+            var elBestHardText = document.querySelector('.hard-text')
+            elBestHardText.innerText = parseFloat(localStorage.getItem('bestScoreLevel3'))
+            localStorage.setItem('bestScoreLevel3', bestScoreLevel3);
+        }
+    }
+}
+
+function updateDomWithScores() {
+    var elBestEasyText = document.querySelector('.easy-text')
+    elBestEasyText.innerText = parseFloat(localStorage.getItem('bestScoreLevel1'))
+    var elBestMediumText = document.querySelector('.medium-text')
+    elBestMediumText.innerText = parseFloat(localStorage.getItem('bestScoreLevel2'))
+    var elBestHardText = document.querySelector('.hard-text')
+    elBestHardText.innerText = parseFloat(localStorage.getItem('bestScoreLevel3'))
+}
 //HINTS
-//💡💡💡
-//פונקציית שכנים שפותחת את כל השכנים לשנייה ואז סוגרת
-//כל hint השורה שלהם משתנה
-//לסדר שיעבוד 
+
 function handleHint(elHint) {
-    if (elHint.innerText === '💡') {
+    if (!elHint.classList.contains('glow') && gGame.isOn) {
         console.log('HINT CLICKED')
         elHint.classList.add('glow')
         gGame.hintMode = true
     }
 }
-
 
 function openCellsWithHint(board, rowIdx, colIdx) {
     console.log('TRY HINT')
@@ -403,38 +532,53 @@ function openCellsWithHint(board, rowIdx, colIdx) {
             var elNeg = document.querySelector("." + classOfNeg)
             elNeg.classList.add('hinted')
             elOpenHintedCells.push(elNeg)
-
-            if (board[negPos.i][negPos.j].minesAroundCount === 0 && !board[negPos.i][negPos.j].isMine) {
+            if (board[negPos.i][negPos.j].minesAroundCount === 0 && !board[negPos.i][negPos.j].isMine && !board[negPos.i][negPos.j].isShown) {
                 elNeg.innerText = EMPTY
+
             }
-            if (board[negPos.i][negPos.j].minesAroundCount !== 0 && !board[negPos.i][negPos.j].isMine) {
+            if (board[negPos.i][negPos.j].minesAroundCount !== 0 && !board[negPos.i][negPos.j].isMine && !board[negPos.i][negPos.j].isShown) {
                 elNeg.innerText = board[negPos.i][negPos.j].minesAroundCount
+
             }
-            if (board[negPos.i][negPos.j].isMine) {
+            if (board[negPos.i][negPos.j].isMine && !board[negPos.i][negPos.j].isShown) {
                 elNeg.innerText = MINE
+
+
             }
         }
-
-
     }
+    closeHintCells(elOpenHintedCells)
+    gGame.hintMode = false
 
 }
-
 
 function closeHintCells(allOpenedCells) {
     setTimeout(() => {
         allOpenedCells.forEach(cell => {
-            cell.innerText = EMPTY
+            if (!cell.classList.contains('opened')) {
+                cell.innerText = EMPTY
+                if (cell.classList.contains('mine')) {
+                    cell.innerText = MINE
+
+                }
+            }
             cell.classList.remove('hinted')
         })
-        gGame.hintMode = false
 
     }, 1000)
 
-    // allOpenedCells.forEach(cell => cell.innerText = EMPTY)
 
 }
 
+function resetHints() {
+    var hint1 = document.querySelector('.hint-one')
+    hint1.classList.remove('glow')
+    var hint2 = document.querySelector('.hint-two')
+    hint2.classList.remove('glow')
+    var hint3 = document.querySelector('.hint-three')
+    hint3.classList.remove('glow')
+
+}
 
 // SAFE CLICK
 
@@ -461,4 +605,199 @@ function onSafeClick() {
 
 }
 
+//DARK-MODE
+function onDarkMode() {
+    var elBody = document.querySelector('body')
+    var elH1 = document.querySelector('h1')
+    var elH2 = document.querySelector('h2')
+    var elCurrentLevelTxt = document.querySelector('.current-level')
+    var elScoresContainer = document.querySelector('.best-scores-container')
+    var elCheatContainer = document.querySelector('.cheats-container')
+    var elSeconds = document.querySelector('.seconds')
+    if (elBody.style.backgroundColor === "black") {
+        elBody.style.backgroundColor = "rgb(196, 196, 196)"
+        elH1.style.color = 'black'
+        elH2.style.color = 'black'
+        elCurrentLevelTxt.style.color = 'black'
+        elScoresContainer.style.borderColor = 'black'
+        elCheatContainer.style.borderColor = 'black'
+        elSeconds.style.color = 'black'
+    } else {
+        elBody.style.backgroundColor = "black"
+        elH1.style.color = 'rgb(196, 196, 196)'
+        elH2.style.color = 'rgb(196, 196, 196)'
+        elCurrentLevelTxt.style.color = 'rgb(196, 196, 196)'
+        elScoresContainer.style.borderColor = 'white'
+        elCheatContainer.style.borderColor = 'white'
+        elSeconds.style.color = 'rgb(196, 196, 196)'
+    }
+
+}
+
+//Manually Place mines 
+//fix that if I dont place any mine the game will run normal - something with the ggame.manuallydone that it only will be done if i place a mine
+function onManuallyPlaceMines() {
+    var elManuallyCreateBTN = document.querySelector('.place-mines-btn')
+    if (!gGame.manuallyCreate) {
+        gGame.manuallyCreate = true
+        console.log('MANUALLY ON')
+        elManuallyCreateBTN.innerText = 'Press To Start'
+
+    } else if (gGame.manuallyCreate) {
+        gGame.manuallyCreate = false
+        gGame.manuallyDone = true
+        elManuallyCreateBTN.innerText = 'Manually Place Mines'
+        renderEmptyBoard()
+        console.log('MANUALLY OFF')
+
+    }
+}
+
+function resetManuallyMode() {
+    gGame.manuallyCreate = false
+    gGame.manuallyDone = false
+    var elManuallyCreateBTN = document.querySelector('.place-mines-btn')
+    elManuallyCreateBTN.innerText = 'Manually Place Mines'
+    gPlacedMines = 0
+
+}
+
+function renderEmptyBoard() {
+    for (var i = 0; i < gBoard.length; i++) {
+        for (var j = 0; j < gBoard[0].length; j++) {
+            var cellPos = { i: i, j: j }
+            var cellClassName = getClassName(cellPos)
+            var elCell = document.querySelector("." + cellClassName)
+            elCell.innerText = EMPTY
+        }
+    }
+}
+
+//MEGA - HINT
+
+function onMegaHint() {
+    if (!gGame.megaHintDone) {
+        gGame.megaHint = true
+        console.log('MEGA HINT ON')
+    }
+
+}
+
+function openMegaHintCells(board, cellsPos) {
+    var elOpenHintedCells = []
+    console.log('cellsPos', cellsPos)
+    var firstCellPos = cellsPos[0]
+    var secondCellPos = cellsPos[1]
+    for (var i = firstCellPos.i; i <= secondCellPos.i; i++) {
+        for (var j = firstCellPos.j; j <= secondCellPos.j; j++) {
+            console.log('i', i)
+            console.log('j', j)
+            var negPos = {
+                i: i,
+                j: j
+            }
+            var classOfNeg = getClassName(negPos)
+            var elNeg = document.querySelector("." + classOfNeg)
+            elNeg.classList.add('hinted')
+            elOpenHintedCells.push(elNeg)
+            if (board[negPos.i][negPos.j].minesAroundCount === 0 && !board[negPos.i][negPos.j].isMine && !board[negPos.i][negPos.j].isShown) {
+                elNeg.innerText = EMPTY
+
+            }
+            if (board[negPos.i][negPos.j].minesAroundCount !== 0 && !board[negPos.i][negPos.j].isMine && !board[negPos.i][negPos.j].isShown) {
+                elNeg.innerText = board[negPos.i][negPos.j].minesAroundCount
+
+            }
+            if (board[negPos.i][negPos.j].isMine && !board[negPos.i][negPos.j].isShown) {
+                elNeg.innerText = MINE
+
+
+            }
+        }
+    }
+    closeHintCells(elOpenHintedCells)
+    gGame.megaHint = false
+    gGame.megaHintDone = true
+}
+
+//MINE EXTERMINATOR
+//אפשר לעדכן את הטקסט של התאים הפתוחים בהתאם לחישוב מחדש של השכנים
+function onMineExterminator() {
+    if (!gGame.mineExterminatorDone) {
+        gGame.mineExterminator = true
+        console.log('MineExterminator')
+        mineExterminator(allMinesPositions)
+    }
+}
+
+function mineExterminator(minesPos) {
+    var allMinesPos = minesPos
+    console.log('allMinesPos', allMinesPos)
+
+    if (gGame.mineExterminator) {
+        for (var i = 0; i < 3; i++) {
+            var randomNum = getRandomInt(0, minesPos.length)
+            var randomMinePos = allMinesPos.splice(randomNum, 1)[0]
+            gBoard[randomMinePos.i][randomMinePos.j].isMine = false
+            var cellClassName = getClassName(randomMinePos)
+            var elCell = document.querySelector("." + cellClassName)
+            elCell.innerText = EXTERMINATOR
+            // console.log('gBoard[randomMinePos.i][randomMinePos.j]', gBoard[randomMinePos.i][randomMinePos.j])
+            // console.log('randomMinePos', randomMinePos)
+
+        }
+
+        updateModelWithNegsCount(gBoard)
+        gMines = gMines - 3
+        alert('Mines exterminated!!!')
+    }
+    gGame.mineExterminator = false
+    gGame.mineExterminatorDone = true
+
+}
+
+
+
+//UNDO
 // מערך של כל התאים הפתוחים לUNDO ?? לחשוב על רעיונות
+// כל תא יהיה מערך עם התאים הפתוחים בעצם יהיה מערך של מערכים ואז כל פעם אפשר לתפוס מערך לרוץ על התאים שלו ולשים בהן תוכן ריק
+//כל פעם שלוחץ על undo הוא לוקח מהמערך של ההיסטוריה את המערך האחרון שבתוכו והופך את כל האינר טקסט של התאים שלו לריקים
+//כל פתיחת תאים עושה פוש להיסטורי של התאים שנפתחו
+//STATER
+
+
+var test = [[1, 2, 5], 4, 3, [5, 4, 1]]
+function onUndo() {
+    console.log('test', test)
+    var prevOpenedCells = test.pop()
+    if (prevOpenedCells[0] === undefined) {
+        console.log('prevOpenedCells', prevOpenedCells)
+        console.log('number')
+        prevOpenedCells.innerText = EMPTY
+        if (prevOpenedCells.classList.contains('opened')) {
+            prevOpenedCells.classList.remove('opened')
+            gGame.shownCount--
+        } else if (prevOpenedCells.classList.contains('mine')) {
+            prevOpenedCells.classList.remove('mine')
+            gClickedBombs--
+            //להוסיף חיים ולסדר כל מה שקשור
+        }
+    } else if (prevOpenedCells[0]) {
+        console.log('prevOpenedCells', prevOpenedCells)
+        console.log('array')
+        for (var i = 0; i < prevOpenedCells.length; i++) {
+            prevOpenedCells[i].innerText = EMPTY
+            if (prevOpenedCells[i].classList.contains('opened')) {
+                prevOpenedCells[i].classList.remove('opened')
+                gGame.shownCount--
+            } else if (prevOpenedCells[i].classList.contains('mine')) {
+                prevOpenedCells[i].classList.remove('mine')
+                //להוסיף חיים ולסדר כל מה שקשור
+                //openBoms doesnt add gClickedBombs++
+            }
+        }
+    }
+
+}
+
+

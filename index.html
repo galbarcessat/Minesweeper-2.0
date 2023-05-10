@@ -16,8 +16,11 @@
     </div>
 
     <h3 class="current-level">LEVEL : Easy</h3>
-    <div class="best-score">BEST SCORE : <span class="best-text">0</span></div>
-
+    <div class="best-scores-container">BEST TIMES :
+        <p>Easy : <span class="easy-text">0</span></p>
+        <p>Medium : <span class="medium-text">0</span></p>
+        <p>Hard : <span class="hard-text">0</span></p>
+    </div>
     <div class="cheats-container">Cheats :
         <div class="hints-container">
             <span>HINTS :</span>
@@ -28,13 +31,14 @@
         <div class="safe-click-container">
             <button onclick="onSafeClick()" class="safe-button">SafeClick</button>
         </div>
+        <button onclick="onDarkMode()" class="dark-mode-btn">DarkMode</button>
+        <button onclick="onManuallyPlaceMines()" class="place-mines-btn">Manually Place Mines</button>
     </div>
     <div class="button-container">
         <button class="level-btn bn22" onclick="onInit(4,2)">Easy</button>
         <button class="level-btn bn22" onclick="onInit(8,14)">Medium</button>
         <button class="level-btn bn22" onclick="onInit(12,32)">Hard</button>
     </div>
-    <!-- <p>Seconds: <span class="seconds">0</span></p> -->
     <div class="hearts-smiley-container">
         <span onclick="onSmiley()" class="smiley">😃</span>
         <span class="hearts">❤️❤️❤️</span>
@@ -47,6 +51,9 @@
 
         </table>
     </div>
+    <button onclick="onMegaHint()" class="mega-hint-btn">Mega Hint</button>
+    <button onclick="onUndo()" class="undo-btn">UNDO</button>
+    <button onclick="onMineExterminator()" class="exterminator-btn">Mine Exterminator</button>
 
     <footer>Gal Ben Natan</footer>
 

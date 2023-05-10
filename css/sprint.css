@@ -18,8 +18,6 @@ h2 {
     text-align: center;
     font-size: 15px;
     font-family: monospace;
-
-    /* margin-bottom: 40px; */
 }
 
 .current-level {
@@ -30,7 +28,9 @@ h2 {
 
 
 .board-game {
-    background-color: rgb(102, 102, 102);
+    /* background-color: rgb(102, 102, 102); */
+    background: rgb(45,45,45);
+background: linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(128, 128, 128) 49%, rgb(36, 36, 36) 100%);
     border: 2px solid black;
     margin: auto;
     padding: 10px;
@@ -43,10 +43,23 @@ h2 {
     padding: 8px;
     font-size: 1.5em;
     font-weight: bolder;
-    /* border-inline: 4px solid rgb(90, 90, 90); */
     background-color: rgb(124, 124, 124);
     text-align: center;
     cursor: pointer;
+}
+
+.cell:hover {
+    background-color: rgb(110, 110, 110);
+}
+
+.opened:hover {
+    background-color: #9FA2B2;
+
+}
+
+.mine:hover {
+    background-color: #FF4444;
+
 }
 
 .opened {
@@ -135,6 +148,7 @@ h2 {
     background-color: rgb(188, 200, 210);
     padding: 15px;
     border: 3px solid #000000;
+    z-index: 1;
 }
 
 .hints-container {
@@ -148,7 +162,12 @@ h2 {
 }
 
 .hinted {
-    background-color: yellow;
+    background-color: rgb(255, 255, 73);
+}
+
+.hinted:hover {
+    background-color: rgb(255, 255, 73);
+
 }
 
 .glow {
@@ -162,6 +181,10 @@ h2 {
     background-color: #0ba360;
 }
 
+.safe:hover {
+    background-color: #0ba360;
+}
+
 .safe-button {
     background-color: rgb(58, 94, 255);
     padding: 10px;
@@ -171,9 +194,80 @@ h2 {
     cursor: pointer;
 }
 
+.best-score {
+    font-size: 25px;
+    font-weight: bolder;
+    font-family: monospace;
+
+}
+
+.best-scores-container {
+    position: absolute;
+    left: 10%;
+    top: 10%;
+    font-size: 25px;
+    font-weight: bold;
+    font-family: monospace;
+    background-color: rgb(188, 200, 210);
+    padding: 15px;
+    border: 3px solid #000000;
+}
+
+.easy-text,
+.medium-text,
+.hard-text {
+    font-size: 20px;
+}
+
+.dark-mode-btn {
+    padding: 10px;
+    width: 120px;
+    margin-top: 10px;
+    font-weight: bold;
+    background-color: black;
+    color: whitesmoke;
+    cursor: pointer;
+}
+
+.place-mines-btn {
+    padding: 10px;
+    width: 120px;
+    margin-top: 10px;
+    font-weight: bold;
+    background-color: rgb(27, 153, 73);
+    color: whitesmoke;
+    cursor: pointer;
+}
+.mega-hint-btn{
+    padding: 10px;
+    width: 120px;
+    margin-top: 10px;
+    font-weight: bold;
+    background-color: rgb(153, 27, 50);
+    color: whitesmoke;
+    cursor: pointer;
+}
+.undo-btn{
+    padding: 10px;
+    width: 120px;
+    margin-top: 10px;
+    font-weight: bold;
+    background-color: rgb(192, 133, 33);
+    color: whitesmoke;
+    cursor: pointer;
+}
+.exterminator-btn{
+    padding: 10px;
+    width: 120px;
+    margin-top: 10px;
+    font-weight: bold;
+    background-color: rgb(33, 160, 192);
+    color: whitesmoke;
+    cursor: pointer;
+}
 footer {
     margin-top: 100px;
-    background-color: burlywood;
+    background-color: #deb887;
     color: #1E2019;
     padding: 5px;
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
