@@ -18,7 +18,7 @@ var gSaveClicks = 0
 var gMegaHintClicks = 0
 var megaHintCells = []
 var allMinesPositions = []
-// var history = []
+var historyCells = []
 var gPlacedMines = 0
 let seconds = 0;
 let timerId;
@@ -52,6 +52,7 @@ function onInit(SIZE, MINES) {
     gMegaHintClicks = 0
     megaHintCells = []
     allMinesPositions = []
+    historyCells = []
     resetManuallyMode()
     resetSmileyAndHearts()
     resetHints()
@@ -59,6 +60,12 @@ function onInit(SIZE, MINES) {
     changeLevelTitleName()
     getCurrentLvlBestScoreVal()
     updateDomWithScores()
+    changeMinesTextValue()
+}
+
+function changeMinesTextValue() {
+    var elMineValue = document.querySelector('.mines-value')
+    elMineValue.innerText = gMines
 }
 
 function buildBoard(size) {
@@ -187,15 +194,15 @@ function onCellClicked(elCell, i, j) {
             clickedCell.isShown = true
             elCell.classList.add('mine')
             gClickedBombs++
-            // history.push(elCell)
+            historyCells.push(elCell)
             var elHearts = document.querySelector('.hearts')
             if (gClickedBombs === 1) {
                 elHearts.innerText = '❤️❤️🤍'
             }
-            if (gClickedBombs === 2) {
+            else if (gClickedBombs === 2) {
                 elHearts.innerText = '❤️🤍🤍'
             }
-            if (gClickedBombs === 3) {
+            else if (gClickedBombs === 3) {
                 elHearts.innerText = '🤍🤍🤍'
                 checkLose()
                 openBombs()
@@ -207,6 +214,8 @@ function onCellClicked(elCell, i, j) {
             gGame.shownCount++
             elCell.classList.remove('safe')
             elCell.classList.add('opened')
+            historyCells.push(elCell)
+
             checkVictory()
 
 
@@ -217,6 +226,8 @@ function onCellClicked(elCell, i, j) {
             expandShown(gBoard, i, j)
             elCell.classList.remove('safe')
             elCell.classList.add('opened')
+            historyCells.push(elCell)
+
             checkVictory()
 
 
@@ -265,12 +276,13 @@ function onCellClicked(elCell, i, j) {
         }
     }
 
-    console.log('minesShownCount', gGame.shownCount)
+    console.log('gGame.shownCount', gGame.shownCount)
 }
 
 
 
 function expandShown(board, rowIdx, colIdx) {
+    // var allExpandCells = []
     for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
         if (i < 0 || i >= board.length) continue
 
@@ -289,26 +301,33 @@ function expandShown(board, rowIdx, colIdx) {
                 board[negPos.i][negPos.j].isMarked = false
                 gGame.markedCount--
                 console.log('gGame.markedCount', gGame.markedCount)
+                // allExpandCells.push(elNeg)
             }
             if (board[negPos.i][negPos.j].minesAroundCount === 0) {
                 elNeg.innerText = EMPTY
                 board[negPos.i][negPos.j].isShown = true
                 gGame.shownCount++
                 elNeg.classList.add('opened')
+                // allExpandCells.push(elNeg)
+
                 //RECURSION OPEN
                 expandShown(board, negPos.i, negPos.j)
+                // var nestedCells = expandShown(board, negPos.i, negPos.j);
+                // allExpandCells = allExpandCells.concat(nestedCells);
 
             } else {
                 elNeg.innerText = board[negPos.i][negPos.j].minesAroundCount
                 board[negPos.i][negPos.j].isShown = true
                 gGame.shownCount++
                 elNeg.classList.add('opened')
-
-
+                // allExpandCells.push(elNeg)
             }
-
         }
     }
+
+    // console.log('allExpandCells', allExpandCells)
+    // historyCells.push(allExpandCells)
+    // console.log('historyCells', historyCells)
 }
 
 function onCellMarked(elCell, i, j) {
@@ -355,7 +374,7 @@ function openBombs() {
             }
         }
     }
-    // history.push(allOpenedBombs)
+    // historyCells.push(allOpenedBombs)
 
 }
 
@@ -610,7 +629,7 @@ function onDarkMode() {
     var elBody = document.querySelector('body')
     var elH1 = document.querySelector('h1')
     var elH2 = document.querySelector('h2')
-    var elCurrentLevelTxt = document.querySelector('.current-level')
+    var elCurrentLevelTxt = document.querySelector('.level-container')
     var elScoresContainer = document.querySelector('.best-scores-container')
     var elCheatContainer = document.querySelector('.cheats-container')
     var elSeconds = document.querySelector('.seconds')
@@ -749,6 +768,7 @@ function mineExterminator(minesPos) {
 
         updateModelWithNegsCount(gBoard)
         gMines = gMines - 3
+        changeMinesTextValue()
         alert('Mines exterminated!!!')
     }
     gGame.mineExterminator = false
@@ -765,39 +785,71 @@ function mineExterminator(minesPos) {
 //כל פתיחת תאים עושה פוש להיסטורי של התאים שנפתחו
 //STATER
 
-
-var test = [[1, 2, 5], 4, 3, [5, 4, 1]]
+// לסדר את הפונקציה שתעבוד גם לחזרה אחורה של פתיחה לא רק של תאים בודדים
 function onUndo() {
-    console.log('test', test)
-    var prevOpenedCells = test.pop()
-    if (prevOpenedCells[0] === undefined) {
-        console.log('prevOpenedCells', prevOpenedCells)
-        console.log('number')
-        prevOpenedCells.innerText = EMPTY
-        if (prevOpenedCells.classList.contains('opened')) {
-            prevOpenedCells.classList.remove('opened')
-            gGame.shownCount--
-        } else if (prevOpenedCells.classList.contains('mine')) {
-            prevOpenedCells.classList.remove('mine')
-            gClickedBombs--
-            //להוסיף חיים ולסדר כל מה שקשור
-        }
-    } else if (prevOpenedCells[0]) {
-        console.log('prevOpenedCells', prevOpenedCells)
-        console.log('array')
-        for (var i = 0; i < prevOpenedCells.length; i++) {
-            prevOpenedCells[i].innerText = EMPTY
-            if (prevOpenedCells[i].classList.contains('opened')) {
-                prevOpenedCells[i].classList.remove('opened')
+    if (gGame.isOn) {
+        console.log('historyCells', historyCells)
+
+        var prevOpenedCells = historyCells.pop()
+
+        if (prevOpenedCells[0] === undefined) {
+            console.log('prevOpenedCells', prevOpenedCells)
+            console.log('number')
+            prevOpenedCells.innerText = EMPTY
+            var cellPos = getCellPos(prevOpenedCells)
+            gBoard[cellPos[0]][cellPos[1]].isShown = false
+            console.log('cellPos', cellPos)
+            if (prevOpenedCells.classList.contains('opened')) {
+                prevOpenedCells.classList.remove('opened')
                 gGame.shownCount--
-            } else if (prevOpenedCells[i].classList.contains('mine')) {
-                prevOpenedCells[i].classList.remove('mine')
-                //להוסיף חיים ולסדר כל מה שקשור
-                //openBoms doesnt add gClickedBombs++
+            } else if (prevOpenedCells.classList.contains('mine')) {
+                prevOpenedCells.classList.remove('mine')
+                gClickedBombs--
+                var elHearts = document.querySelector('.hearts')
+                if (gClickedBombs === 0) {
+                    elHearts.innerText = '❤️❤️❤️'
+                }
+                else if (gClickedBombs === 1) {
+                    elHearts.innerText = '❤️❤️🤍'
+                }
+                else if (gClickedBombs === 2) {
+                    elHearts.innerText = '❤️🤍🤍'
+                }
+            }
+        } else if (prevOpenedCells[0]) {
+            console.log('prevOpenedCells', prevOpenedCells)
+            console.log('array')
+            //תאים של פתיחה גדולה ולא תא בודד
+            for (var i = 0; i < prevOpenedCells.length; i++) {
+                prevOpenedCells[i].innerText = EMPTY
+                if (prevOpenedCells[i].classList.contains('opened')) {
+                    prevOpenedCells[i].classList.remove('opened')
+                    // gGame.shownCount--
+                }
+                //סיום משחק כל המוקשים פתוחים
+                // else if (prevOpenedCells[i].classList.contains('mine')) {
+                //     prevOpenedCells[i].classList.remove('mine')
+                //     //להוסיף חיים ולסדר כל מה שקשור
+                //     //openBoms doesnt add gClickedBombs++
+                // }
             }
         }
     }
-
 }
 
+function getCellPos(element) {
+    // Extract the numbers- position -i and j from the class names
+    const classList = element.classList
+    let numbers = []
 
+    for (let i = 0; i < classList.length; i++) {
+        const classNames = classList[i].split('-')
+        for (let j = 0; j < classNames.length; j++) {
+            const num = parseInt(classNames[j])
+            if (!isNaN(num)) {
+                numbers.push(num)
+            }
+        }
+    }
+    return numbers
+}

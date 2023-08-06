@@ -20,17 +20,25 @@ h2 {
     font-family: monospace;
 }
 
-.current-level {
+/* .current-level {
     font-family: monospace;
     font-size: 25px;
+    margin-bottom: 10px;
+} */
+.level-container {
+    font-family: monospace;
+    font-size: 25px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    margin-top: 15px;
 }
 
 
 
 .board-game {
     /* background-color: rgb(102, 102, 102); */
-    background: rgb(45,45,45);
-background: linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(128, 128, 128) 49%, rgb(36, 36, 36) 100%);
+    background: rgb(45, 45, 45);
+    background: linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(128, 128, 128) 49%, rgb(36, 36, 36) 100%);
     border: 2px solid black;
     margin: auto;
     padding: 10px;
@@ -238,7 +246,8 @@ background: linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(128, 128, 128) 49%, r
     color: whitesmoke;
     cursor: pointer;
 }
-.mega-hint-btn{
+
+.mega-hint-btn {
     padding: 10px;
     width: 120px;
     margin-top: 10px;
@@ -247,7 +256,8 @@ background: linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(128, 128, 128) 49%, r
     color: whitesmoke;
     cursor: pointer;
 }
-.undo-btn{
+
+.undo-btn {
     padding: 10px;
     width: 120px;
     margin-top: 10px;
@@ -256,7 +266,8 @@ background: linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(128, 128, 128) 49%, r
     color: whitesmoke;
     cursor: pointer;
 }
-.exterminator-btn{
+
+.exterminator-btn {
     padding: 10px;
     width: 120px;
     margin-top: 10px;
@@ -265,6 +276,7 @@ background: linear-gradient(90deg, rgb(36, 36, 36) 0%, rgb(128, 128, 128) 49%, r
     color: whitesmoke;
     cursor: pointer;
 }
+
 footer {
     margin-top: 100px;
     background-color: #deb887;
